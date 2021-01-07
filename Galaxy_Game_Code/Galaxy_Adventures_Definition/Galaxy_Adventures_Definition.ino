@@ -3,9 +3,14 @@
 #include <SPI.h>      //include the SPI bus library
 #include <MFRC522.h>  //include the RFID reader library
 #include <EEPROM.h>
+#include <ArduinoJson.h>
 
-#define SS_PIN A0  //slave select pin
-#define RST_PIN A3  //reset pin
+#define SS_PIN 48  //slave select pin
+#define RST_PIN 47  //reset pin
+
+// ----- JSON Controller ----- //
+#define JSONBUFFER 300
+StaticJsonDocument< JSONBUFFER > JSONbuffer;
 
 // ----- LCD Controller ----- //
   #define RS 2
@@ -16,10 +21,10 @@
   #define LCDPIN_7 7
 
 // ----- Encoder ----- //
-  #define encA 8
-  #define encB 9
+  #define encA 11
+  #define encB 10
   //this encoder has a button here
-  #define encBtn A1
+  #define encBtn 12
   
 //----- AddOns Extensions -----//
 /*  
@@ -30,12 +35,14 @@
 */
 
 //----- Neopixel Configuration -----//
-#define NUM_LEDS_PER_STRIP 10
-#define PIN A5  //Defines the Datapin for NeoPixel
+#define NUM_LEDS_PER_STRIP 8
+#define PIXEL_PIN 14 //Defines the Datapin for NeoPixel
+#define BRIGHTNESS 150
 
 #include "Neopixel_Controller.h"
+Neopixel_Controller strip = Neopixel_Controller(NUM_LEDS_PER_STRIP, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
 #include "RFID_Controller.h"
-#include "Menu_Controller.h"
 #include "Galaxy_Game.h"
 
 //----- GALAXY GAME Configuration -----//
@@ -44,17 +51,21 @@
 #define TREASURES 3
 
 RFID_Controller reader( SS_PIN, RST_PIN );
+Galaxy_Game game( reader, strip );
+#include "Menu_Controller.h"
 
-Galaxy_Game game( reader );
+Menu_Controller galaxy_menu;
+
 
 void setup() {
   Serial.begin( 9600 );
   SPI.begin();   
   Serial.println("Galaxy Adventures");
   game.init();
+  galaxy_menu.init(); 
 }
 
 void loop() {
   game.update();
-
+  galaxy_menu.update();
 }

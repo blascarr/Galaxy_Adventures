@@ -4,8 +4,8 @@
 #include <MFRC522.h>  //include the RFID reader library
 
 
-#define SS_PIN A0  //slave select pin
-#define RST_PIN A3  //reset pin
+#define SS_PIN 48  //slave select pin
+#define RST_PIN 47  //reset pin
 
 // ----- LCD Controller ----- //
   #define RS 2
@@ -16,10 +16,10 @@
   #define LCDPIN_7 7
 
 // ----- Encoder ----- //
-  #define encA 8
-  #define encB 9
+  #define encA 11
+  #define encB 10
   //this encoder has a button here
-  #define encBtn A1
+  #define encBtn 12
 
 
 //----- AddOns Extensions -----//
