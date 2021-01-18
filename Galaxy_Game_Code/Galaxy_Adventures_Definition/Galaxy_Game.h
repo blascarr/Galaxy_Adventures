@@ -46,7 +46,11 @@ class Galaxy_Game{
   // ---- Time Controller ---- //
   long timestamp;
   uint16_t duration = 500;  //Under 500 ms, update() execute several times ( 3 times at least ) 
-    
+
+
+  bool old_flag = 0;
+  bool card_flag = 0;
+  
   SpaceShip current_ship;
   
   Galaxy_Game( RFID_Controller &RFID ): RFID_reader( RFID ){
@@ -61,19 +65,25 @@ class Galaxy_Game{
     SPI.begin(); 
     RFID_reader.init();
     strip.begin();
+    
   }
   
   void update(){
     if( ( millis() - timestamp ) > duration ){
          timestamp = millis();
+         //Serial.println( cardPresent );
+         
          if ( RFID_reader.update() ){
-          Serial.println("CardOn : "); 
-          strip.success( true );
-          // Serialize Info in JSON
+            strip.success( true );
+            
+            
             //clearInfo Last Card
             JSONbuffer.clear();
-            mapCard();
+            card_flag = 1;
+            // Serialize Info in JSON
+            //mapCard();
          }
+        
     }
     
     strip.update();

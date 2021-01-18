@@ -2,11 +2,13 @@
 
 #include <SPI.h>      //include the SPI bus library
 #include <MFRC522.h>  //include the RFID reader library
-#include <EEPROM.h>
+//#include <EEPROM.h>
 #include <ArduinoJson.h>
 
 #define SS_PIN 48  //slave select pin
 #define RST_PIN 47  //reset pin
+#define IRQ_PIN 18
+volatile bool cardPresent;
 
 // ----- JSON Controller ----- //
 #define JSONBUFFER 300
@@ -43,6 +45,7 @@ StaticJsonDocument< JSONBUFFER > JSONbuffer;
 Neopixel_Controller strip = Neopixel_Controller(NUM_LEDS_PER_STRIP, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 #include "RFID_Controller.h"
+#include "playership.h"
 #include "Galaxy_Game.h"
 
 //----- GALAXY GAME Configuration -----//
@@ -52,17 +55,23 @@ Neopixel_Controller strip = Neopixel_Controller(NUM_LEDS_PER_STRIP, PIXEL_PIN, N
 
 RFID_Controller reader( SS_PIN, RST_PIN );
 Galaxy_Game game( reader, strip );
+
+// -----Players Declaration ----//
+CardJSON player( JSONString );
+
+
 #include "Menu_Controller.h"
 
 Menu_Controller galaxy_menu;
-
 
 void setup() {
   Serial.begin( 9600 );
   SPI.begin();   
   Serial.println("Galaxy Adventures");
   game.init();
-  galaxy_menu.init(); 
+  galaxy_menu.init();
+  player.deserialize();
+  attachInterrupt(digitalPinToInterrupt( IRQ_PIN ), CARD_IRQ, RISING);
 }
 
 void loop() {

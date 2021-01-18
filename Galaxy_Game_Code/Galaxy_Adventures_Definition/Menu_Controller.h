@@ -28,36 +28,28 @@ chainStream<2> in(inputsList);//3 is the number of inputs
 
 // Events Declaration /////////////////////////////////////////
 result showEvent(eventMask e,navNode& nav,prompt& item) {
-  Serial.print("event: ");
-  Serial.println(e);
+  //Serial.print("event: ");
+  //Serial.println(e);
   return proceed;
 }
 
 // Detectar que hay tarjeta y mostrar informacion de la ultima tarjeta clasificada
-
 result serialCardInfo(eventMask e,navNode& nav,prompt& item) {
-
   game.debugCard();
-        
   return proceed;
 }
 
-result readName(eventMask e,navNode& nav,prompt& item) {
-
-  //Serial.println("Read Name");
-  //Serial.println( game.RFID_reader.readStringBlock( 4) );
+result readCard(eventMask e,navNode& nav,prompt& item) {
   game.infoCard();
   return proceed;
 }
 
 uint8_t nplayer = 0;
 result writeName(eventMask e,navNode& nav,prompt& item) {
+ game.RFID_reader.fast_reset();
   byte blockcontent[16] = {"Player 1"};
   game.RFID_reader.writeBlock( 4 , blockcontent );
 }
-
-
-
 
 // ---- COLOR FIELDS ---- //
 
@@ -100,6 +92,12 @@ result writeColor(eventMask e,navNode& nav,prompt& item) {
   return proceed;
 }
 
+result loadPlayer(eventMask e,navNode& nav,prompt& item) {
+  Serial.println("Loading Player... ");
+  player.loadPlayer( game.RFID_reader);
+  return proceed;
+}
+
 SELECT(mode,ColorSelector,"Select",doNothing,noEvent,noStyle
   ,VALUE("BLUE",0,writeColor,enterEvent)
   ,VALUE("GREEN",1,writeColor,enterEvent)
@@ -108,40 +106,25 @@ SELECT(mode,ColorSelector,"Select",doNothing,noEvent,noStyle
   ,VALUE("CYAN",4,writeColor,enterEvent)
   ,VALUE("MAGENTA",5,writeColor,enterEvent)
 );
-  
-
-MENU( debug,"Debug",showEvent,anyEvent,noStyle
-  ,OP("Load",showEvent,anyEvent)
-  ,OP("No Fuel",showEvent,anyEvent)
-  ,EXIT("<Back")
-);
 
 
 MENU( loadPlayers,"Cargar Jugadores",showEvent,anyEvent,noStyle
   ,FIELD( nplayer,"Write Name","",0,5,1,1,writeName,exitEvent,wrapStyle )
   ,SUBMENU( ColorSelector )
-  ,OP("Read Name",readName,enterEvent)
-  ,OP("Write Name",showEvent,anyEvent)
-  ,OP("Book",showEvent,anyEvent)
-  ,OP("Data",showEvent,anyEvent)
+  ,OP("LOAD FROM CODE",loadPlayer,enterEvent)
+  ,OP("LOAD FROM EEPROM",showEvent,anyEvent)
+  ,OP("LOAD FROM SD",showEvent,anyEvent)
   ,EXIT("<Back")
 );
 
-MENU( loadTreasures,"Cargar Tesoros",showEvent,anyEvent,noStyle
-  ,OP("Book",showEvent,anyEvent)
-  ,OP("Data",showEvent,anyEvent)
-  ,EXIT("<Back")
-);
 
 MENU(mainMenu,"Main menu",doNothing,noEvent,wrapStyle
-  ,OP("Debug Card",serialCardInfo,enterEvent )
+  ,OP("Read Card",readCard,enterEvent)
+  ,OP("Raw Card",serialCardInfo,enterEvent )
   ,SUBMENU( loadPlayers )
-  ,SUBMENU( debug )
-  ,SUBMENU( loadTreasures )
   ,OP("Save EEPROM",showEvent,anyEvent)
   ,EXIT("<Back")
 );
-
 
 #define MAX_DEPTH 3
 

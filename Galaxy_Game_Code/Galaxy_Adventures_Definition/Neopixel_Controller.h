@@ -84,7 +84,7 @@ class Neopixel_Controller : public Adafruit_NeoPixel{
     if ( ON ){
       changeEffect( &colorRun );
     }else{
-      changeEffect( &glow );
+      changeEffect( &rainbow );
     }
   }
 
