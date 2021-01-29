@@ -8,6 +8,7 @@ typedef struct {
 void CARD_IRQ()
 {
   cardPresent = false;
+  Serial.println("Card Out");
   strip.success( false );
 }
 
@@ -45,10 +46,10 @@ class RFID_Controller: public MFRC522{
       }
     }
 
-    bool update(){
+    void update(){
         bool cardOn = false;
-        cardOn = PICC_IsNewCardPresent();
-          if (  cardOn  ) {
+        if (  !cardPresent  ) {
+          cardOn = PICC_IsNewCardPresent();
             
             if (  PICC_ReadCardSerial()) 
             {
@@ -57,7 +58,7 @@ class RFID_Controller: public MFRC522{
             }
          }
          PICC_HaltA();
-        return cardOn;
+       //return cardOn;
     }
 
     bool checkCurrentCard(){

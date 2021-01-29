@@ -73,14 +73,15 @@ class Galaxy_Game{
          timestamp = millis();
          //Serial.println( cardPresent );
          
-         if ( RFID_reader.update() ){
-            strip.success( true );
+         //if ( RFID_reader.update() ){
+            RFID_reader.update();
+            //strip.success( true );
             
             //clearInfo Last Card
-            JSONbuffer.clear();
+            //JSONbuffer.clear();
             // Serialize Info in JSON
             //mapCard();
-         }
+         //}
         
     }
     

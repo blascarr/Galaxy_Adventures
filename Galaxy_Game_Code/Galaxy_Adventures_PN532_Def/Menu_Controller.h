@@ -33,72 +33,98 @@ result showEvent(eventMask e,navNode& nav,prompt& item) {
   return proceed;
 }
 
-// Detectar que hay tarjeta y mostrar informacion de la ultima tarjeta clasificada
-result serialCardInfo(eventMask e,navNode& nav,prompt& item) {
-  game.debugCard();
+// ---- COLOR FIELDS ---- //
+
+result writeColor(eventMask e,navNode& nav,prompt& item) {
+  byte colorLabel[16] = { "BLUE" };
+  byte colorValue[16] = { "65532" };
+  Serial.println( game.colorSelector );
+  String color = "BLUE";
+  String colorval = "65532";
+  
+  switch ( game.colorSelector ){
+    case 0:
+      color = "BLUE";
+      colorval = "43690";
+    break;
+    case 1:
+      color = "GREEN";
+      colorval = "21845";
+    break;
+    case 2:
+      color = "YELLOW";
+      colorval = "10923";
+    break;
+    case 3:
+      color = "RED";
+      colorval =  "0";
+    break;
+    case 4:
+      color = "CYAN";
+      colorval = "32768";
+    break;
+    case 5:
+      color = "MAGENTA";
+      colorval = "54613";
+    break;
+  }
+  color.getBytes(colorLabel, 16 );
+  colorval.getBytes(colorValue, 16 );
+  
+  if ( game.RFID_reader.writeBlock( 5 , colorLabel ) ){
+    Serial.print("Write in Block ");
+    Serial.print( 5 );
+    Serial.print(" : ");
+    Serial.println( color );
+  }
+  
+  if( game.RFID_reader.writeBlock( 6 , colorValue ) ){
+    Serial.print("Write in Block ");
+    Serial.print( 6 );
+    Serial.print(" : ");
+    Serial.println( colorval );
+  }
+  
   return proceed;
 }
 
-result readCard(eventMask e,navNode& nav,prompt& item) {
+// Detectar que hay tarjeta y mostrar informacion de la ultima tarjeta clasificada
+result serialCardInfo(eventMask e,navNode& nav,prompt& item) {
   game.infoCard();
   return proceed;
 }
 
-uint8_t nplayer = 0;
-result writeName(eventMask e,navNode& nav,prompt& item) {
- game.RFID_reader.fast_reset();
-  byte blockcontent[16] = {"Player 1"};
-  game.RFID_reader.writeBlock( 4 , blockcontent );
-}
-
-// ---- COLOR FIELDS ---- //
-
-int mode=0;
-
-result writeColor(eventMask e,navNode& nav,prompt& item) {
-  byte colorLabel[16] = { "BLUE" };
-  byte colorValue[16] = { 65532 };
-  
-  switch (mode){
-    case 0:
-      colorLabel[16] = { "BLUE" };
-      colorValue[16] = { 43690 };
-    break;
-    case 1:
-      colorLabel[16] = { "GREEN" };
-      colorValue[16] = { 21845 };
-    break;
-    case 2:
-      colorLabel[16] = { "YELLOW" };
-      colorValue[16] = { 10923 };
-    break;
-    case 3:
-      colorLabel[16] = { "RED" };
-      colorValue[16] = { 0 };
-    break;
-    case 4:
-      colorLabel[16] = { "CYAN" };
-      colorValue[16] = { 32768 };
-    break;
-    case 5:
-      colorLabel[16] = { "MAGENTA" };
-      colorValue[16] = { 54613 };
-    break;
-  }
-
-  //game.RFID_reader.writeBlock( 5 , colorLabel );
-  //game.RFID_reader.writeBlock( 6 , colorValue );
-  
-  return proceed;
-}
-
-result loadPlayer(eventMask e,navNode& nav,prompt& item) {
+result loadCodePlayer(eventMask e,navNode& nav,prompt& item) {
   Serial.println("Loading Player... ");
+  player.deserialize();
   player.loadPlayer( game.RFID_reader);
   return proceed;
 }
 
-SELECT(mode,ColorSelector,"Select",doNothing,noEvent,noStyle
+result loadSDPlayer(eventMask e,navNode& nav,prompt& item) {
+  Serial.println("Loading Player... ");
+  player.SDdeserialize();
+  player.loadPlayer( game.RFID_reader);
+  return proceed;
+}
+
+result viewPlayer(eventMask e,navNode& nav,prompt& item) {
+  Serial.println("Player Data... ");
+  player.print( game.RFID_reader);
+  return proceed;
+}
+
+result readBlock(eventMask e,navNode& nav,prompt& item) {
+  Serial.print("Read Block ");
+  Serial.print( nfc.block );
+  Serial.print (" From Card: ");
+  game.RFID_reader.readBlock();
+  Serial.println();
+  return proceed;
+}
+
+
+SELECT( game.colorSelector ,ColorSelector,"Select",doNothing,noEvent,noStyle
   ,VALUE("BLUE",0,writeColor,enterEvent)
   ,VALUE("GREEN",1,writeColor,enterEvent)
   ,VALUE("YELLOW",2,writeColor,enterEvent)
@@ -107,21 +133,28 @@ SELECT(mode,ColorSelector,"Select",doNothing,noEvent,noStyle
   ,VALUE("MAGENTA",5,writeColor,enterEvent)
 );
 
-
 MENU( loadPlayers,"Cargar Jugadores",showEvent,anyEvent,noStyle
-  ,FIELD( nplayer,"Write Name","",0,5,1,1,writeName,exitEvent,wrapStyle )
-  ,SUBMENU( ColorSelector )
-  ,OP("LOAD FROM CODE",loadPlayer,enterEvent)
-  ,OP("LOAD FROM EEPROM",showEvent,anyEvent)
-  ,OP("LOAD FROM SD",showEvent,anyEvent)
+  //,FIELD( nplayer,"Write Name","",0,5,1,1,writeName,exitEvent,wrapStyle )
+  //,SUBMENU( ColorSelector )
+  ,OP("LOAD FROM CODE",loadCodePlayer,enterEvent)
+  ,OP("LOAD FROM SD",loadSDPlayer,enterEvent)
+  ,OP("LOAD FROM EEPROM",showEvent,enterEvent)
   ,EXIT("<Back")
 );
 
+MENU( writePlayers,"Write Data",showEvent,anyEvent,noStyle
+  //,FIELD( nplayer,"Write Name","",0,5,1,1,writeName,exitEvent,wrapStyle )
+  ,SUBMENU( ColorSelector )
+  ,EXIT("<Back")
+);
 
 MENU(mainMenu,"Main menu",doNothing,noEvent,wrapStyle
-  ,OP("Read Card",readCard,enterEvent)
-  ,OP("Raw Card",serialCardInfo,enterEvent )
+  ,OP("Read Card",serialCardInfo,enterEvent)
+  ,OP("Read Player",doNothing,enterEvent)
+  ,FIELD( nfc.block,"Read Block","",4,63,1,1,readBlock ,exitEvent,wrapStyle )
+  //,OP("Raw Card",doNothing,enterEvent )
   ,SUBMENU( loadPlayers )
+  ,SUBMENU( writePlayers )
   ,OP("Save EEPROM",showEvent,anyEvent)
   ,EXIT("<Back")
 );
